@@ -3658,6 +3658,7 @@ export const ANIMALS_DATABASE: Animal[] = [
   },
 ];
 
+// Mapeamento dos nomes amigáveis em português para cada atributo exibido na interface
 export const ATTRIBUTE_METADATA: { [K in CompareAttributeKey]: { label: string } } = {
   classe: { label: 'Classe' },
   habitat: { label: 'Habitat' },
@@ -3669,6 +3670,7 @@ export const ATTRIBUTE_METADATA: { [K in CompareAttributeKey]: { label: string }
   cobertura: { label: 'Revestimento' },
 };
 
+// Escala numérica linear para calcular proximidade de porte corpóreo
 const SIZE_SCALE = {
   Pequeno: 0,
   Médio: 1,
@@ -3676,13 +3678,25 @@ const SIZE_SCALE = {
   Gigante: 3,
 };
 
-// Avaliação de correspondência exata ou proximidade (quase certo)
+/**
+ * ============================================================================
+ * ALGORITMO DE COMPARAÇÃO BIOLÓGICA & "QUASE CERTO" (COR LARANJA #F9A620)
+ * ============================================================================
+ * Esta função avalia a proximidade entre o valor chutado e o valor secreto:
+ * 1. Correspondência exata -> Retorna 'exact' (Verde)
+ * 2. Correspondência aproximada / vizinha -> Retorna 'close' (Laranja)
+ * 3. Totalmente diferente -> Retorna 'different' (Cinza)
+ */
 function evaluateAttribute(key: CompareAttributeKey, guessVal: string, secretVal: string): { status: MatchStatus; label: string } {
+  // Caso 1: Valores 100% idênticos
   if (guessVal === secretVal) {
     return { status: 'exact', label: 'Correto' };
   }
 
-  // Regras de "Quase Certo" (Laranja)
+  // Caso 2: Regras taxonômicas e biológicas de "Quase Certo" (Laranja)
+  
+  // Porte corpóreo: se a diferença de tamanho for de apenas 1 degrau na escala
+  // Exemplo: 'Pequeno' vs 'Médio' (distância 1) é considerado porte próximo!
   if (key === 'tamanho') {
     const d = Math.abs((SIZE_SCALE as any)[guessVal] - (SIZE_SCALE as any)[secretVal]);
     if (d === 1) {
@@ -3690,6 +3704,7 @@ function evaluateAttribute(key: CompareAttributeKey, guessVal: string, secretVal
     }
   }
 
+  // Dieta alimentar: dietas com sobreposição de alimentos (ex: Carnívoro e Insetívoro, Onívoro e Herbívoro)
   if (key === 'dieta') {
     const isShared =
       (guessVal === 'Carnívoro' && secretVal === 'Insetívoro') ||
@@ -3701,6 +3716,7 @@ function evaluateAttribute(key: CompareAttributeKey, guessVal: string, secretVal
     }
   }
 
+  // Hábito/Ciclo Circadiano: Crepuscular fica entre Diurno e Noturno
   if (key === 'habito') {
     const isAdjacent =
       (guessVal === 'Crepuscular' && (secretVal === 'Diurno' || secretVal === 'Noturno')) ||
@@ -3710,6 +3726,8 @@ function evaluateAttribute(key: CompareAttributeKey, guessVal: string, secretVal
     }
   }
 
+  // Bioma / Habitat ecológico fronteiriço:
+  // Ex: Floresta e Montanha, Savana e Deserto, Aquático e Polar
   if (key === 'habitat') {
     const closeHabitats =
       (guessVal === 'Floresta' && secretVal === 'Montanha') ||
@@ -3723,6 +3741,7 @@ function evaluateAttribute(key: CompareAttributeKey, guessVal: string, secretVal
     }
   }
 
+  // Locomoção motora: Animais terrestres ágeis (Anda/Corre vs Pula)
   if (key === 'locomocao') {
     if (
       (guessVal === 'Anda/Corre' && secretVal === 'Pula') ||
@@ -3732,6 +3751,7 @@ function evaluateAttribute(key: CompareAttributeKey, guessVal: string, secretVal
     }
   }
 
+  // Classes taxonômicas irmãs ou com afinidade evolutiva (ex: Réptil e Anfíbio)
   if (key === 'classe') {
     if (
       (guessVal === 'Réptil' && secretVal === 'Anfíbio') ||
@@ -3743,9 +3763,13 @@ function evaluateAttribute(key: CompareAttributeKey, guessVal: string, secretVal
     }
   }
 
+  // Caso 3: Nenhuma correlação direta
   return { status: 'different', label: 'Diferente' };
 }
 
+/**
+ * Executa a comparação de todos os 8 atributos entre o animal palpitado e o animal secreto
+ */
 export function compareAnimals(guess: Animal, secret: Animal): AttributeComparison[] {
   const keys: CompareAttributeKey[] = [
     'classe',
@@ -3771,6 +3795,14 @@ export function compareAnimals(guess: Animal, secret: Animal): AttributeComparis
   });
 }
 
+/**
+ * SISTEMA DE PONTUAÇÃO DINÂMICA (Inversamente proporcional ao número de tentativas)
+ * Recompensa o jogador com maior pontuação se deduzir o animal com menos palpites:
+ * - 1ª tentativa: 1.000 pontos
+ * - 2ª tentativa: 850 pontos
+ * - 3ª tentativa: 700 pontos
+ * - etc.
+ */
 export function calculateScore(tentativa: number): number {
   if (tentativa === 1) return 1000;
   if (tentativa === 2) return 850;
@@ -3782,6 +3814,10 @@ export function calculateScore(tentativa: number): number {
   return 100;
 }
 
+/**
+ * Sorteia aleatoriamente um animal do catálogo para ser o mistério da rodada
+ * Permite passar um ID para excluir o animal da rodada anterior, evitando repetições seguidas
+ */
 export function getRandomAnimal(excludeId?: string): Animal {
   const candidates = excludeId
     ? ANIMALS_DATABASE.filter((a) => a.id !== excludeId)

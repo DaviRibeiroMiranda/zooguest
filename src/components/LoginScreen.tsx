@@ -1,20 +1,39 @@
+/**
+ * ============================================================================
+ * TELA DE AUTENTICAÇÃO LIMPA — LoginScreen
+ * ============================================================================
+ * Primeira tela apresentada ao usuário. Projetada com foco em simplicidade,
+ * sem distrações ou elementos supérfluos:
+ * - Botão direto de acesso com Conta Google (OAuth popup).
+ * - Formulário tradicional de E-mail e Senha com alternador entre "Entrar" e "Cadastrar".
+ * - Botão de "Modo Visitante" para entrada instantânea sem cadastro obrigatório.
+ * - Paleta escura minimalista (#F9A620, #403D58) e ausência de imagem de fundo.
+ */
+
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { LogIn, UserPlus, Play, AlertCircle } from 'lucide-react';
 
 export const LoginScreen: React.FC = () => {
+  // Extrai do contexto as funções de autenticação conectadas ao Firebase Auth
   const { entrarComGoogle, entrarComEmail, cadastrarComEmail, jogarComoConvidado } = useAuth();
-  const [modo, setModo] = useState<'login' | 'registro'>('login');
-  const [nome, setNome] = useState('');
-  const [email, setEmail] = useState('');
-  const [senha, setSenha] = useState('');
-  const [erro, setErro] = useState<string | null>(null);
-  const [carregando, setCarregando] = useState(false);
 
+  // Estados locais para controlar o formulário
+  const [modo, setModo] = useState<'login' | 'registro'>('login'); // Alterna entre Entrar e Criar Conta
+  const [nome, setNome] = useState(''); // Nome visível no ranking (apenas no modo de cadastro)
+  const [email, setEmail] = useState(''); // E-mail fornecido
+  const [senha, setSenha] = useState(''); // Senha digitada
+  const [erro, setErro] = useState<string | null>(null); // Mensagem de feedback de erro
+  const [carregando, setCarregando] = useState(false); // Indicador de carregamento durante a requisição
+
+  /**
+   * Submissão do formulário de E-mail e Senha
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro(null);
 
+    // Validação preventiva dos campos no cliente
     if (!email || !senha) {
       setErro('Preencha seu e-mail e sua senha.');
       return;
@@ -28,11 +47,14 @@ export const LoginScreen: React.FC = () => {
     try {
       setCarregando(true);
       if (modo === 'login') {
+        // Dispara login no Firebase Auth
         await entrarComEmail(email, senha);
       } else {
+        // Dispara cadastro no Firebase Auth + criação de documento no Firestore
         await cadastrarComEmail(nome, email, senha);
       }
     } catch (err: any) {
+      // Tradução humanizada dos códigos de erro nativos do Firebase Auth
       const msg = err.message || '';
       if (msg.includes('user-not-found') || msg.includes('wrong-password') || msg.includes('invalid-credential')) {
         setErro('E-mail ou senha incorretos.');
@@ -48,6 +70,9 @@ export const LoginScreen: React.FC = () => {
     }
   };
 
+  /**
+   * Dispara o fluxo de autenticação com a Conta Google
+   */
   const handleGoogle = async () => {
     setErro(null);
     try {
@@ -63,7 +88,7 @@ export const LoginScreen: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-center px-4 py-8">
       <div className="w-full max-w-sm mx-auto">
-        {/* Marca & Título */}
+        {/* Marca & Título do Aplicativo */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-black tracking-tight text-[#F9A620]">
             zooGuest
@@ -73,6 +98,7 @@ export const LoginScreen: React.FC = () => {
           </p>
         </div>
 
+        {/* Alerta de Erro Visual */}
         {erro && (
           <div className="mb-5 p-3 bg-rose-950/80 border border-rose-700 text-rose-200 text-xs flex items-start gap-2.5">
             <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
@@ -80,7 +106,7 @@ export const LoginScreen: React.FC = () => {
           </div>
         )}
 
-        {/* Botão de Login com Google - Sharp com Paleta */}
+        {/* Botão de Login com Google — Cores oficiais e visual nítido */}
         <button
           type="button"
           onClick={handleGoogle}
@@ -108,6 +134,7 @@ export const LoginScreen: React.FC = () => {
           <span>Continuar com Google</span>
         </button>
 
+        {/* Separador de Contexto */}
         <div className="relative my-6 text-center">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-[#403D58]" />
@@ -117,7 +144,7 @@ export const LoginScreen: React.FC = () => {
           </span>
         </div>
 
-        {/* Formulário E-mail / Senha */}
+        {/* Formulário Tradicional E-mail / Senha */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {modo === 'registro' && (
             <div>
@@ -163,6 +190,7 @@ export const LoginScreen: React.FC = () => {
             />
           </div>
 
+          {/* Botão de Envio do Formulário */}
           <button
             type="submit"
             disabled={carregando}
@@ -182,7 +210,7 @@ export const LoginScreen: React.FC = () => {
           </button>
         </form>
 
-        {/* Rodapé: Alternador de Modo & Convidado */}
+        {/* Rodapé: Alternador de Modo & Acesso de Visitante */}
         <div className="mt-6 flex items-center justify-between text-xs text-slate-400">
           <button
             type="button"

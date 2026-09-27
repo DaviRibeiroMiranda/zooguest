@@ -1,3 +1,15 @@
+/**
+ * ============================================================================
+ * TABULEIRO DO JOGO & LÓGICA DE DEDUÇÃO — GameBoard
+ * ============================================================================
+ * Este é o componente central da experiência do jogador:
+ * 1. Sorteia o animal secreto no início de cada rodada (`getRandomAnimal`).
+ * 2. Recebe o palpite do usuário via campo de busca ou menu suspenso.
+ * 3. Compara os 8 atributos biológicos com o animal secreto.
+ * 4. Exibe os resultados usando a paleta de cores (#548C2F verde, #F9A620 laranja, #403D58 cinza).
+ * 5. Em caso de vitória, aciona a animação de confetes e persiste os pontos no Firestore.
+ */
+
 import React, { useState, useMemo } from 'react';
 import confetti from 'canvas-confetti';
 import {
@@ -19,16 +31,26 @@ import {
 } from 'lucide-react';
 
 export const GameBoard: React.FC = () => {
+  // Acessa o usuário atual e o método de persistência do Firestore no AuthContext
   const { user, salvarProgressoVitoria } = useAuth();
 
+  // 1. ESTADO: O animal misterioso da rodada atual
   const [secretAnimal, setSecretAnimal] = useState<Animal>(() => getRandomAnimal());
-  const [palpites, setPalpites] = useState<GuessResult[]>([]);
-  const [busca, setBusca] = useState<string>('');
-  const [dropdownAberto, setDropdownAberto] = useState<boolean>(false);
-  const [statusJogo, setStatusJogo] = useState<'jogando' | 'vitoria' | 'revelado'>('jogando');
-  const [pontosGanhos, setPontosGanhos] = useState<number>(0);
 
+  // 2. ESTADO: Lista dos palpites já submetidos nesta rodada (mais recente primeiro)
+  const [palpites, setPalpites] = useState<GuessResult[]>([]);
+
+  // 3. ESTADOS DE CONTROLE DE BUSCA E INTERFACE
+  const [busca, setBusca] = useState<string>(''); // Texto digitado pelo jogador
+  const [dropdownAberto, setDropdownAberto] = useState<boolean>(false); // Visibilidade da lista de animais
+  const [statusJogo, setStatusJogo] = useState<'jogando' | 'vitoria' | 'revelado'>('jogando');
+  const [pontosGanhos, setPontosGanhos] = useState<number>(0); // Pontuação final obtida na vitória
+
+  /**
+   * Reinicia a rodada com um novo animal aleatório, limpando os palpites anteriores
+   */
   const iniciarNovaPartida = () => {
+    // Sorteia um animal diferente do atual para não repetir
     const proximo = getRandomAnimal(secretAnimal.id);
     setSecretAnimal(proximo);
     setPalpites([]);
@@ -38,6 +60,11 @@ export const GameBoard: React.FC = () => {
     setPontosGanhos(0);
   };
 
+  /**
+   * MEMOIZAÇÃO: Filtra os 260 animais disponíveis:
+   * - Exclui os animais que o jogador já chutou nesta mesma rodada
+   * - Filtra pelo termo de busca digitado (nome, classe ou bioma)
+   */
   const animaisDisponiveis = useMemo(() => {
     const jaPalpitados = new Set(palpites.map((p) => p.animalPalpite.id));
     return ANIMALS_DATABASE.filter(
@@ -49,19 +76,27 @@ export const GameBoard: React.FC = () => {
     );
   }, [busca, palpites]);
 
+  /**
+   * FLUXO PRINCIPAL: Processa o palpite enviado pelo jogador
+   */
   const enviarPalpite = async (animalEscolhido: Animal) => {
     if (statusJogo !== 'jogando') return;
 
+    // Fecha o menu suspenso e limpa a barra de busca
     setDropdownAberto(false);
     setBusca('');
 
+    // Determina o número sequencial da tentativa (1, 2, 3...)
     const novaTentativaNum = palpites.length + 1;
+
+    // Compara os 8 atributos biológicos com o algoritmo especializado
     const comparacoes = compareAnimals(animalEscolhido, secretAnimal);
     const exatos = comparacoes.filter((c) => c.status === 'exact').length;
     const quaseCertos = comparacoes.filter((c) => c.status === 'close').length;
     const acertou = animalEscolhido.id === secretAnimal.id;
     const pontos = calculateScore(novaTentativaNum);
 
+    // Monta o objeto de resultado do palpite
     const novoResultado: GuessResult = {
       tentativaNumero: novaTentativaNum,
       animalPalpite: animalEscolhido,
@@ -73,12 +108,15 @@ export const GameBoard: React.FC = () => {
       pontuacaoPotencial: pontos,
     };
 
+    // Insere o novo palpite no topo da lista
     setPalpites([novoResultado, ...palpites]);
 
+    // SE O JOGADOR ACERTOU O ANIMAL:
     if (acertou) {
       setStatusJogo('vitoria');
       setPontosGanhos(pontos);
 
+      // Dispara a animação festiva de confetes usando as cores temáticas do jogo
       confetti({
         particleCount: 70,
         spread: 60,
@@ -86,6 +124,7 @@ export const GameBoard: React.FC = () => {
         colors: ['#F9A620', '#548C2F', '#403D58', '#ffffff'],
       });
 
+      // Grava os pontos no banco de dados Firestore ('testdatabase')
       if (user) {
         try {
           await salvarProgressoVitoria(pontos, novaTentativaNum, secretAnimal.nome);
@@ -96,10 +135,14 @@ export const GameBoard: React.FC = () => {
     }
   };
 
+  /**
+   * Permite que o jogador desista da rodada e descubra qual era o animal misterioso
+   */
   const desistir = () => {
     setStatusJogo('revelado');
   };
 
+  // Pontuação que será obtida se o jogador acertar no próximo palpite
   const proximaPontuacao = calculateScore(palpites.length + 1);
 
   return (

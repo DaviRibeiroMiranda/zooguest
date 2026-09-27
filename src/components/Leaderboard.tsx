@@ -1,3 +1,15 @@
+/**
+ * ============================================================================
+ * RANKING EM TEMPO REAL COM FIRESTORE — Leaderboard
+ * ============================================================================
+ * Este componente consulta e exibe a tabela de líderes dos jogadores ao vivo:
+ * 1. Usa `onSnapshot` conectado à coleção `jogadores` no banco de dados `testdatabase`.
+ * 2. Ordena os jogadores por `pontuacaoTotal` em ordem decrescente (`orderBy('pontuacaoTotal', 'desc')`).
+ * 3. Limita o ranking aos 50 melhores com `limit(50)`.
+ * 4. Destaca a linha do jogador atualmente conectado com a tag "(Você)" e borda dourada.
+ * 5. Permite excluir a própria ficha do banco (`deleteDoc`) com confirmação de segurança.
+ */
+
 import React, { useEffect, useState } from 'react';
 import { collection, query, orderBy, limit, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
@@ -6,21 +18,34 @@ import { useAuth } from '../context/AuthContext';
 import { Search, RefreshCw, Trash2 } from 'lucide-react';
 
 export const Leaderboard: React.FC = () => {
+  // Obtém o usuário logado e os dados da ficha do AuthContext
   const { user, jogador } = useAuth();
-  const [ranking, setRanking] = useState<Jogador[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [busca, setBusca] = useState<string>('');
-  const [confirmandoReset, setConfirmandoReset] = useState<boolean>(false);
 
+  // Estados locais
+  const [ranking, setRanking] = useState<Jogador[]>([]); // Lista de jogadores carregados do Firestore
+  const [loading, setLoading] = useState<boolean>(true); // Indicador de carregamento inicial
+  const [busca, setBusca] = useState<string>(''); // Filtro de busca por nome ou e-mail
+  const [confirmandoReset, setConfirmandoReset] = useState<boolean>(false); // Modal de confirmação para zerar ficha
+
+  /**
+   * EFEITO: Cria o listener em tempo real no Firestore (`onSnapshot`)
+   * Qualquer alteração de pontuação em qualquer dispositivo atualiza o ranking instantaneamente!
+   */
   useEffect(() => {
     setLoading(true);
+
+    // 1. Aponta para a coleção 'jogadores' dentro do banco 'testdatabase'
     const jogadoresRef = collection(db, 'jogadores');
+
+    // 2. Monta a query: ordena pela maior pontuação total e restringe aos top 50
     const consultaRanking = query(jogadoresRef, orderBy('pontuacaoTotal', 'desc'), limit(50));
 
+    // 3. Inicia o listener de snapshot em tempo real
     const desinscrever = onSnapshot(
       consultaRanking,
       (snapshot) => {
         const lista: Jogador[] = [];
+        // Itera sobre os documentos retornados
         snapshot.forEach((docSnap) => {
           lista.push(docSnap.data() as Jogador);
         });
@@ -28,24 +53,29 @@ export const Leaderboard: React.FC = () => {
         setLoading(false);
       },
       (error) => {
-        console.error('Erro ao ler ranking:', error);
+        console.error('Erro ao ler ranking do Firestore:', error);
         setLoading(false);
       }
     );
 
+    // Função de limpeza: cancela a escuta quando o jogador sai da aba de ranking
     return () => desinscrever();
   }, []);
 
+  /**
+   * OPERAÇÃO CRUD (DELETE): Exclui a ficha do jogador atual do Firestore
+   */
   const resetarProgresso = async () => {
     if (!user) return;
     try {
       await deleteDoc(doc(db, 'jogadores', user.uid));
       setConfirmandoReset(false);
     } catch (err) {
-      console.error('Erro ao resetar:', err);
+      console.error('Erro ao resetar documento no Firestore:', err);
     }
   };
 
+  // Filtra os jogadores pelo nome ou e-mail conforme o usuário digita na busca
   const listaFiltrada = ranking.filter((j) =>
     j.nome.toLowerCase().includes(busca.toLowerCase()) ||
     j.email?.toLowerCase().includes(busca.toLowerCase())
@@ -53,7 +83,7 @@ export const Leaderboard: React.FC = () => {
 
   return (
     <div className="space-y-3 max-w-lg mx-auto pb-10">
-      {/* Busca */}
+      {/* Barra de Busca de Jogadores */}
       <div className="relative">
         <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
         <input
@@ -65,7 +95,7 @@ export const Leaderboard: React.FC = () => {
         />
       </div>
 
-      {/* Lista de Classificação em Formato Retilíneo e com a Paleta */}
+      {/* Lista de Classificação — Linhas retas com paleta botânica */}
       <div className="bg-[#104911]/90 border border-[#403D58] divide-y divide-[#403D58]/60 overflow-hidden">
         {loading ? (
           <div className="p-8 text-center text-xs text-slate-300 flex items-center justify-center gap-2">
@@ -89,6 +119,7 @@ export const Leaderboard: React.FC = () => {
                 }`}
               >
                 <div className="flex items-center gap-3">
+                  {/* Posição no Ranking com destaque aos 3 primeiros colocados */}
                   <span
                     className={`w-7 text-center text-xs font-bold tabular-nums ${
                       posicao === 1
@@ -119,6 +150,7 @@ export const Leaderboard: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Pontuação Total formatada */}
                 <div className="text-right">
                   <div className="text-sm font-bold text-[#F9A620] tabular-nums">
                     {(item.pontuacaoTotal || 0).toLocaleString()}
@@ -131,7 +163,7 @@ export const Leaderboard: React.FC = () => {
         )}
       </div>
 
-      {/* Ação de Reset com Confirmação */}
+      {/* Ação de Exclusão de Ficha / Reset com Confirmação Prévia */}
       {user && jogador && (
         <div className="pt-2 text-center">
           {confirmandoReset ? (

@@ -2,57 +2,76 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions
+    // ========================================================================
+    // FUNÇÕES AUXILIARES DE SEGURANÇA (HELPERS)
+    // ========================================================================
+
+    // Verifica se a requisição provém de um usuário autenticado no Firebase Auth
     function isSignedIn() {
       return request.auth != null;
     }
 
+    // Verifica se o ID do documento corresponde exatamente ao UID do usuário logado
+    // (Princípio do Menor Privilégio: cada jogador só altera seus próprios dados)
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    // Valida que o identificador possui formato seguro (alfanumérico sem injeção)
     function isValidId(id) {
       return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
 
-    // Default deny all documents
+    // ========================================================================
+    // REGRA PADRÃO (DEFAULT DENY)
+    // ========================================================================
+    // Bloqueia qualquer leitura ou escrita não expressamente autorizada abaixo
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // Connection test document
+    // Documento leve para verificação de conectividade do cliente com o servidor
     match /test/{docId} {
       allow read: if true;
     }
 
-    // Coleção de jogadores para o Ranking Geral
+    // ========================================================================
+    // COLEÇÃO 'jogadores' — RANKING GERAL & PONTUAÇÃO DOS USUÁRIOS
+    // ========================================================================
     match /jogadores/{userId} {
-      // Qualquer jogador autenticado ou visitante pode ler o ranking geral
+      // Leitura pública permitida para que todos vejam o ranking geral ao vivo
       allow get, list: if true;
 
-      // Apenas o próprio usuário autenticado pode criar ou atualizar seu perfil e pontuação
+      // Criação de perfil: somente o dono autenticado, com pontuação válida não negativa
       allow create: if isOwner(userId)
                     && request.resource.data.uid == userId
                     && request.resource.data.pontuacaoTotal is number
                     && request.resource.data.pontuacaoTotal >= 0;
 
+      // Atualização: somente o dono, garantindo que a nova pontuação seja maior ou igual à anterior
       allow update: if isOwner(userId)
                     && request.resource.data.uid == userId
                     && request.resource.data.pontuacaoTotal is number
                     && request.resource.data.pontuacaoTotal >= resource.data.pontuacaoTotal;
 
+      // Exclusão: o jogador pode resetar/zerar sua própria ficha a qualquer momento
       allow delete: if isOwner(userId);
     }
 
-    // Coleção de histórico de partidas
+    // ========================================================================
+    // COLEÇÃO 'partidas' — HISTÓRICO DAS VITÓRIAS REGISTRADAS
+    // ========================================================================
     match /partidas/{partidaId} {
+      // Usuários logados podem ler o histórico de partidas
       allow read: if isSignedIn();
 
+      // Gravação permitida se o userId da partida corresponder ao usuário logado
       allow create: if isSignedIn()
                     && request.resource.data.userId == request.auth.uid
                     && request.resource.data.pontosGanhos is number
                     && request.resource.data.tentativas is number;
 
+      // Modificação ou exclusão restrita ao dono da partida
       allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
   }
