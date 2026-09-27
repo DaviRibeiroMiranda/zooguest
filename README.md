@@ -1,10 +1,10 @@
-# ZooEnigma — Adivinhação de Animais & Ranking em Tempo Real
+# zooGuest — Adivinhação de Animais & Ranking em Tempo Real
 
-Olá! Seja muito bem-vindo ao **ZooEnigma**.
+Olá! Seja muito bem-vindo ao **zooGuest**.
 
 Este projeto nasceu como uma ponte prática e divertida entre o universo da biologia e a engenharia de software moderno. Nos primeiros passos do aprendizado de desenvolvimento móvel, quase todo estudante se depara com a famosa "síndrome da memória de peixinho dourado": você cria um aplicativo incrível, cadastra dados com carinho, mas assim que fecha o app ou reinicia o celular, tudo desaparece no ar.
 
-O **ZooEnigma** resolve isso conectando um jogo de dedução animal a um banco de dados real na nuvem do **Google Firebase** (especificamente no banco de dados NoSQL **`testdatabase`** do Firestore), permitindo que qualquer pessoa se autentique com sua conta Google ou e-mail e veja sua pontuação disputando o ranking global ao vivo.
+O **zooGuest** resolve isso conectando um jogo de dedução animal a um banco de dados real na nuvem do **Google Firebase** (especificamente no banco de dados NoSQL **`testdatabase`** do Firestore), permitindo que qualquer pessoa se autentique com sua conta Google ou e-mail e veja sua pontuação disputando o ranking global ao vivo.
 
 ---
 
@@ -17,13 +17,13 @@ O aplicativo utiliza uma paleta de cores botânica elegante e natural, projetada
 - **`#548C2F` (Verde Musgo / Folha Viva)**: Aplicado nas características **"exatas/corretas"** e nos destaques de vitória.
 - **`#104911` (Verde Pinheiro Profundo)**: O tom de fundo das cartas e da camada de escurecimento sobre a fotografia da floresta, garantindo contraste nítido e conforto visual.
 
-> **Filosofia de Design**: O visual prioriza linhas retas, precisas e funcionais, evitando bordas arredondadas exageradas ou efeitos visuais desnecessários. A bela fotografia de floresta é exibida como fundo imersivo durante o jogo, mantendo a tela de login limpa e focada.
+> **Filosofia de Design**: O visual prioriza linhas retas, precisas e funcionais, evitando bordas arredondadas exageradas ou efeitos visuais desnecessários. A fotografia de floresta é exibida como fundo imersivo durante o jogo, mantendo a tela de login limpa e focada.
 
 ---
 
 ## 🎯 Como o Jogo Funciona
 
-1. **Catálogo Amplo**: O sistema conta com mais de **110 animais catalogados** de todas as ordens biológicas: mamíferos terrestres e marinhos, aves de rapina e canoras, répteis, anfíbios, peixes fluviais e marinhos, e invertebrados.
+1. **Catálogo Amplo com 260 Espécies**: O sistema conta com mais de **260 animais catalogados** de todas as ordens biológicas: mamíferos terrestres e marinhos, aves de rapina e canoras, répteis, anfíbios, peixes fluviais e marinhos, e invertebrados fascinantes.
 2. **O Palpite**: Você escolhe um animal para testar.
 3. **Comparação Biológica em 8 Atributos**:
    - **Classe**: Mamífero, Ave, Réptil, Anfíbio, Peixe ou Invertebrado.

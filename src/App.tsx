@@ -46,7 +46,7 @@ function MainApp() {
           <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="font-bold text-base tracking-wide text-[#F9A620]">
-                ZooEnigma
+                zooGuest
               </span>
             </div>
 

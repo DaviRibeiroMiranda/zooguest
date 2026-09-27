@@ -66,7 +66,7 @@ export const LoginScreen: React.FC = () => {
         {/* Marca & Título */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-black tracking-tight text-[#F9A620]">
-            ZooEnigma
+            zooGuest
           </h1>
           <p className="text-sm text-slate-300 mt-2">
             Adivinhe o animal pelas características e dispute o ranking global
