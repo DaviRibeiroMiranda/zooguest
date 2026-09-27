@@ -1,0 +1,59 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Default deny all documents
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Connection test document
+    match /test/{docId} {
+      allow read: if true;
+    }
+
+    // Coleção de jogadores para o Ranking Geral
+    match /jogadores/{userId} {
+      // Qualquer jogador autenticado ou visitante pode ler o ranking geral
+      allow get, list: if true;
+
+      // Apenas o próprio usuário autenticado pode criar ou atualizar seu perfil e pontuação
+      allow create: if isOwner(userId)
+                    && request.resource.data.uid == userId
+                    && request.resource.data.pontuacaoTotal is number
+                    && request.resource.data.pontuacaoTotal >= 0;
+
+      allow update: if isOwner(userId)
+                    && request.resource.data.uid == userId
+                    && request.resource.data.pontuacaoTotal is number
+                    && request.resource.data.pontuacaoTotal >= resource.data.pontuacaoTotal;
+
+      allow delete: if isOwner(userId);
+    }
+
+    // Coleção de histórico de partidas
+    match /partidas/{partidaId} {
+      allow read: if isSignedIn();
+
+      allow create: if isSignedIn()
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.pontosGanhos is number
+                    && request.resource.data.tentativas is number;
+
+      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+  }
+}

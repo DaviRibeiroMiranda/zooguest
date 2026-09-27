@@ -1,0 +1,103 @@
+{
+  "entities": {
+    "Jogador": {
+      "title": "Jogador",
+      "description": "Perfil e pontuação acumulada do jogador no ranking",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "ID do usuário do Firebase Auth",
+          "maxLength": 128
+        },
+        "nome": {
+          "type": "string",
+          "description": "Nome de exibição do jogador",
+          "maxLength": 60
+        },
+        "email": {
+          "type": "string",
+          "description": "E-mail do jogador",
+          "maxLength": 120
+        },
+        "pontuacaoTotal": {
+          "type": "number",
+          "description": "Soma da pontuação total acumulada em todas as partidas"
+        },
+        "partidasJogadas": {
+          "type": "number",
+          "description": "Total de partidas disputadas"
+        },
+        "vitorias": {
+          "type": "number",
+          "description": "Total de animais adivinhados com sucesso"
+        },
+        "melhorTentativa": {
+          "type": "number",
+          "description": "Menor número de tentativas para adivinhar um animal"
+        },
+        "nivel": {
+          "type": "number",
+          "description": "Nível RPG do aventureiro baseado na pontuação"
+        },
+        "avatar": {
+          "type": "string",
+          "description": "Emoji ou ícone de identificação",
+          "maxLength": 20
+        },
+        "atualizadoEm": {
+          "type": "string",
+          "description": "Timestamp ISO da última pontuação salva",
+          "maxLength": 50
+        }
+      },
+      "required": ["uid", "nome", "pontuacaoTotal", "partidasJogadas", "vitorias"]
+    },
+    "Partida": {
+      "title": "Partida",
+      "description": "Registro de uma partida concluída pelo jogador",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "ID do jogador",
+          "maxLength": 128
+        },
+        "nomeJogador": {
+          "type": "string",
+          "description": "Nome do jogador no momento da partida",
+          "maxLength": 60
+        },
+        "animalNome": {
+          "type": "string",
+          "description": "Nome do animal adivinhado",
+          "maxLength": 60
+        },
+        "tentativas": {
+          "type": "number",
+          "description": "Quantidade de palpites necessários"
+        },
+        "pontosGanhos": {
+          "type": "number",
+          "description": "Pontos obtidos nesta partida"
+        },
+        "dataHora": {
+          "type": "string",
+          "description": "Data e hora ISO da vitória",
+          "maxLength": 50
+        }
+      },
+      "required": ["userId", "animalNome", "tentativas", "pontosGanhos"]
+    }
+  },
+  "firestore": {
+    "/jogadores/{userId}": {
+      "schema": "Jogador",
+      "description": "Coleção de perfis e pontuações dos jogadores para o ranking"
+    },
+    "/partidas/{partidaId}": {
+      "schema": "Partida",
+      "description": "Histórico de partidas individuais registradas"
+    }
+  }
+}

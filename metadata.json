@@ -1,0 +1,6 @@
+{
+  "name": "ZooEnigma - Adivinhe o Animal & Ranking Firebase",
+  "description": "Jogo de adivinhação de animais baseado em atributos com pontuação dinâmica, autenticação Firebase (Google e E-mail) e ranking em tempo real no Firestore.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
